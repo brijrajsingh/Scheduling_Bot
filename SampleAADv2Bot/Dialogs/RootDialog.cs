@@ -55,7 +55,7 @@ namespace SampleAADv2Bot.Dialogs
                 Authority = ConfigurationManager.AppSettings["aad:Authority"],
                 ClientId = ConfigurationManager.AppSettings["aad:ClientId"],
                 ClientSecret = ConfigurationManager.AppSettings["aad:ClientSecret"],
-                Scopes = new string[] { "User.Read" },
+                Scopes = new string[] { "User.Read", "Calendars.ReadWrite", "Calendars.ReadWrite.Shared" },
                 RedirectUrl = ConfigurationManager.AppSettings["aad:Callback"]
             };
             await context.Forward(new AuthDialog(new MSALAuthProvider(), options), ResumeAfterAuth, message, CancellationToken.None);
@@ -263,7 +263,13 @@ namespace SampleAADv2Bot.Dialogs
                 };
 
                 var scheduledMeeting = await meetingService.ScheduleMeeting(result.AccessToken, meeting);
-                await context.PostAsync($"Meeting with iCalUId - {scheduledMeeting.ICalUId} is scheduled.");
+                var stringBuilder = new StringBuilder();
+                stringBuilder.AppendLine($"Booked the meeting!\n subject:{subject} participants:");
+                foreach(var email in normalizedEmails)
+                stringBuilder.AppendLine(email+" ");
+                stringBuilder.AppendLine("date:" + meeting.Start.DateTime.ToString() + " - " + meeting.End.DateTime.ToString());
+
+                await context.PostAsync(stringBuilder.ToString());
             }
             catch (Exception ex)
             {
