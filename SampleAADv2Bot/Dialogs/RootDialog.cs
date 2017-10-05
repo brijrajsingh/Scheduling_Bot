@@ -7,14 +7,11 @@ using Microsoft.Bot.Connector;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using SampleAADv2Bot.Extensions;
 using SampleAADv2Bot.Services;
-using SampleAADv2Bot.Util;
 using Microsoft.Graph;
 using System.Text;
 
@@ -33,7 +30,6 @@ namespace SampleAADv2Bot.Dialogs
 
         //Scheduling
         AuthResult result = null;
-        DateTime startDateTest;
 
 
 
@@ -152,7 +148,7 @@ namespace SampleAADv2Bot.Dialogs
         private async Task GetMeetingSuggestions(IDialogContext context, IAwaitable<string> argument)
         {
             string startDate = date + "T00:00:00.000Z";
-            string endDate = date + "T10: 00:00.00Z";
+            string endDate = date + "T20: 00:00.00Z";
             List<Attendee> inputAttendee = new List<Attendee>();
             foreach (var i in normalizedEmails)
             {
@@ -211,7 +207,6 @@ namespace SampleAADv2Bot.Dialogs
                 num++;
             }
 
-            DateTime.TryParse(meetingTimeSuggestion.MeetingTimeSuggestions.ElementAt(0).MeetingTimeSlot.Start.DateTime, out startDateTest);
             await context.PostAsync($"There are the options for meeting");
             await context.PostAsync(stringBuilder.ToString());
             PromptDialog.Text(context, this.ScheduleMeeitng,
@@ -225,7 +220,7 @@ namespace SampleAADv2Bot.Dialogs
 
             var optiontime = await (message);
             await context.PostAsync("the time slot you have chosen is " + lstStartDateTme[Convert.ToInt16(optiontime) - 1]);
-
+            var startDate = lstStartDateTme[Convert.ToInt16(optiontime) - 1];
             try
             {
                 List<Attendee> inputAttendee = new List<Attendee>();
@@ -255,19 +250,19 @@ namespace SampleAADv2Bot.Dialogs
                         //DateTime = "2017-10-29T08:30:00.000Z",
 
 
-                        DateTime = startDateTest.Year.ToString("D4") +"-"+ startDateTest.Month.ToString("D2") + "-"+
-                        startDateTest.Day.ToString("D2") + "T" + 
-                        startDateTest.Hour.ToString("D2") +":"+ startDateTest.Minute.ToString("D2") + ":00.000Z",
+                        DateTime = startDate.Year.ToString("D4") +"-"+ startDate.Month.ToString("D2") + "-"+
+                        startDate.Day.ToString("D2") + "T" + 
+                        startDate.Hour.ToString("D2") +":"+ startDate.Minute.ToString("D2") + ":00.000Z",
 
                         TimeZone = "UTC"
                     },
                     End = new DateTimeTimeZone()
                     {
-                        DateTime = startDateTest.Year.ToString("D4") + "-" + startDateTest.Month.ToString("D2") + "-" +
-                        startDateTest.Day.ToString("D2") + "T" +
+                        DateTime = startDate.Year.ToString("D4") + "-" + startDate.Month.ToString("D2") + "-" +
+                        startDate.Day.ToString("D2") + "T" +
 
 
-                        startDateTest.AddMinutes(normalizedDuration).Hour.ToString("D2") + ":" + startDateTest.AddMinutes(normalizedDuration).Minute.ToString("D2") +":00.000Z",
+                        startDate.AddMinutes(normalizedDuration).Hour.ToString("D2") + ":" + startDate.AddMinutes(normalizedDuration).Minute.ToString("D2") +":00.000Z",
 
                         TimeZone = "UTC"
                     },
@@ -280,7 +275,13 @@ namespace SampleAADv2Bot.Dialogs
 
 
                 var scheduledMeeting = await meetingService.ScheduleMeeting(result.AccessToken, meeting);
-                await context.PostAsync($"Meeting with iCalUId - {scheduledMeeting.ICalUId} is scheduled.");
+                var stringBuilder = new StringBuilder();
+                stringBuilder.AppendLine($"Booked the meeting! Subject is {subject}. Participants are");
+                foreach (var email in normalizedEmails)
+                    stringBuilder.AppendLine(email + " ");
+                stringBuilder.AppendLine(". Date is " + startDate.ToShortDateString()+" "+ startDate.ToShortTimeString() + " - " + startDate.AddMinutes(normalizedDuration).ToShortTimeString() + ".");
+
+                await context.PostAsync(stringBuilder.ToString());
 
             }
             catch (Exception ex)
