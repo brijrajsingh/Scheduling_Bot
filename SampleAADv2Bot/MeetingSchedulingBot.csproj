@@ -150,7 +150,6 @@
     <Compile Include="Services\MeetingService.cs" />
     <Compile Include="Services\Room.cs" />
     <Compile Include="Services\RoomService.cs" />
-    <Compile Include="Util\DataConverter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -95,7 +93,7 @@ namespace BotAuth.Controllers
                     else
                     {
                         await Conversation.ResumeAsync(conversationRef, message);
-                        resp.Content = new StringContent($"<html><body>Almost done! Please copy this number and paste it back to your chat so your authentication can complete:<br/> <h1>{magicNumber}</h1>.</body></html>", System.Text.Encoding.UTF8, @"text/html");
+                        resp.Content = new StringContent($"<html><body>Thank you for authenticating. You can now return back to the bot.</body></html>", System.Text.Encoding.UTF8, @"text/html");
                     }
                     return resp;
                 }
