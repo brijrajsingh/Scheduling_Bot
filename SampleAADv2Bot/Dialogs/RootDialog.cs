@@ -33,6 +33,8 @@ namespace SampleAADv2Bot.Dialogs
 
         //Scheduling
         AuthResult result = null;
+        DateTime startDateTest;
+
 
         // TBD - Replace with dependency injection 
         MeetingService meetingService = new MeetingService(new RoomService());
@@ -74,7 +76,7 @@ namespace SampleAADv2Bot.Dialogs
         {
             this.subject = await argument;
             await context.PostAsync("I have set the Subject of the meeting as " + subject + " !");
-            await ScheduleMeeitng(context, argument);
+            //await ScheduleMeeitng(context, argument);
 
             PromptDialog.Text(context, this.DurationReceivedAsync, "Please enter the duration of the meeting.");
             //PromptDialog.Text(context, this.DateMessageReceivedAsync, "Please enter when you want to have the meeting. e.g. 2017-10-10");
@@ -205,51 +207,61 @@ namespace SampleAADv2Bot.Dialogs
                 stringBuilder.AppendLine($"{num} {startTime.ToString()}  - {endTime.ToString()}\n");
                 num++;
             }
+            DateTime.TryParse(meetingTimeSuggestion.MeetingTimeSuggestions.ElementAt(0).MeetingTimeSlot.Start.DateTime, out startDateTest);            
             await context.PostAsync($"There are the options for meeting");
-            await context.PostAsync(stringBuilder.ToString());            
+            await context.PostAsync(stringBuilder.ToString());
+            await ScheduleMeeitng(context, argument);
         }
 
         public async Task ScheduleMeeitng(IDialogContext context, IAwaitable<string> message)
         {
-
             try
             {
-                #region TBD Replace with real input 
+                List<Attendee> inputAttendee = new List<Attendee>();
+                foreach (var i in normalizedEmails)
+                {
+                    inputAttendee.Add(
+                         new Attendee()
+                         {
+                             EmailAddress = new EmailAddress()
+                             {
+                                 Address = i
+                             }
+                         }
+                        );
+                }
+
                 var meeting = new Event()
                 {
-                    Subject = "My Event",
+                    Subject = subject,
                     Body = new ItemBody()
                     {
                         ContentType = BodyType.Html,
-                        Content = "Does late morning work for you?"
+                        Content = "Does this schedule work for you?"
                     },
                     Start = new DateTimeTimeZone()
                     {
-                        DateTime = "2017-10-29T07:30:00.000Z",
+                        //DateTime = "2017-10-29T08:30:00.000Z",
+
+                        DateTime = startDateTest.Year.ToString("D4") +"-"+ startDateTest.Month.ToString("D2") + "-"+
+                        startDateTest.Day.ToString("D2") + "T" + 
+                        startDateTest.Hour.ToString("D2") +":"+ startDateTest.Minute.ToString("D2") + ":00.000Z",
                         TimeZone = "UTC"
                     },
                     End = new DateTimeTimeZone()
                     {
-                        DateTime = "2017-10-29T08:30:00.000Z",
+                        DateTime = startDateTest.Year.ToString("D4") + "-" + startDateTest.Month.ToString("D2") + "-" +
+                        startDateTest.Day.ToString("D2") + "T" +
+                        startDateTest.AddMinutes(normalizedDuration).Hour.ToString("D2") + ":" + startDateTest.AddMinutes(normalizedDuration).Minute.ToString("D2") +":00.000Z",
                         TimeZone = "UTC"
                     },
                     Location = new Location()
                     {
-                        DisplayName = "Harry's Bar"
+                        DisplayName = "Hoshi"
                     },
-                    Attendees = new List<Attendee>()
-                        {
-                            new Attendee()
-                            {
-                                EmailAddress =  new EmailAddress()
-                                {
-                                    Address = "ken@fjhftrial.onmicrosoft.com"
-                                },
-                                Type = AttendeeType.Required
-                            },
-                        }
+                    Attendees = inputAttendee
                 };
-                #endregion
+
                 var scheduledMeeting = await meetingService.ScheduleMeeting(result.AccessToken, meeting);
                 await context.PostAsync($"Meeting with iCalUId - {scheduledMeeting.ICalUId} is scheduled.");
             }
