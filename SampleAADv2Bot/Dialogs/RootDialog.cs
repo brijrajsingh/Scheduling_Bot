@@ -61,13 +61,14 @@ namespace SampleAADv2Bot.Dialogs
 
             // Use token to call into service
             var json = await new HttpClient().GetWithAuthAsync(result.AccessToken, "https://graph.microsoft.com/v1.0/me");
-            await authContext.PostAsync($"Hello {json.Value<string>("displayName")}!");
+            await authContext.PostAsync($"Hello {json.Value<string>("displayName")}!, I am Schedulo, I will help you schedule Meetings with your colleagues");
             PromptDialog.Text(authContext, this.SubjectMessageReceivedAsync, "Please enter the subject of the meeting.");
         }
 
         public async Task SubjectMessageReceivedAsync(IDialogContext context, IAwaitable<string> argument)
         {
             this.subject = await argument;
+            await context.PostAsync("I have set the Subject of the meeting as " + subject+" !");
             PromptDialog.Text(context, this.DurationReceivedAsync, "Please enter the duration of the meeting.");
             //PromptDialog.Text(context, this.DateMessageReceivedAsync, "Please enter when you want to have the meeting. e.g. 2017-10-10");
         }
@@ -75,14 +76,16 @@ namespace SampleAADv2Bot.Dialogs
         public async Task DurationReceivedAsync(IDialogContext context, IAwaitable<string> argument)
         {
             this.duration = await argument;
+          
             if (this.duration.IsNaturalNumber())
             {
+                await context.PostAsync("The duration of your meeting is set as "+duration+"mins. Now I only need to know the name of the collegues!!");
                 normalizedDuration = Int32.Parse(this.duration);
                 PromptDialog.Text(context, this.EmailsMessageReceivedAsync, "Please enter emails of the participants separeted by comma.");
             }
             else
             {
-                await context.PostAsync("Please enter only number.");
+                await context.PostAsync("The entered duration is not valid");
                 PromptDialog.Text(context, this.DurationReceivedAsync, "Please enter duration of the meeting.");
             }
         }
@@ -120,6 +123,7 @@ namespace SampleAADv2Bot.Dialogs
             {
                 try
                 {
+                    await context.PostAsync("Please wait While I search for the available time slots......");
                     //await GetMeetingSuggestions(context, argument);
                 }
                 catch (Exception e)
