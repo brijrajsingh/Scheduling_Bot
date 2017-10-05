@@ -36,6 +36,7 @@ namespace SampleAADv2Bot.Dialogs
         DateTime startDateTest;
 
 
+
         private List<DateTime> lstStartDateTme = null;
         // TBD - Replace with dependency injection 
         MeetingService meetingService = new MeetingService(new RoomService());
@@ -209,18 +210,22 @@ namespace SampleAADv2Bot.Dialogs
                 stringBuilder.AppendLine($"{num} {startTime.ToString()}  - {endTime.ToString()}\n");
                 num++;
             }
+
             DateTime.TryParse(meetingTimeSuggestion.MeetingTimeSuggestions.ElementAt(0).MeetingTimeSlot.Start.DateTime, out startDateTest);
             await context.PostAsync($"There are the options for meeting");
             await context.PostAsync(stringBuilder.ToString());
             PromptDialog.Text(context, this.ScheduleMeeitng,
                 "Please select one slot by giving input such as 1, 2 ,3 .....");
 
+
         }
 
         public async Task ScheduleMeeitng(IDialogContext context, IAwaitable<string> message)
         {
+
             var optiontime = await (message);
             await context.PostAsync("the time slot you have chosen is " + lstStartDateTme[Convert.ToInt16(optiontime) - 1]);
+
             try
             {
                 List<Attendee> inputAttendee = new List<Attendee>();
@@ -249,16 +254,21 @@ namespace SampleAADv2Bot.Dialogs
                     {
                         //DateTime = "2017-10-29T08:30:00.000Z",
 
-                        DateTime = startDateTest.Year.ToString("D4") + "-" + startDateTest.Month.ToString("D2") + "-" +
-                        startDateTest.Day.ToString("D2") + "T" +
-                        startDateTest.Hour.ToString("D2") + ":" + startDateTest.Minute.ToString("D2") + ":00.000Z",
+
+                        DateTime = startDateTest.Year.ToString("D4") +"-"+ startDateTest.Month.ToString("D2") + "-"+
+                        startDateTest.Day.ToString("D2") + "T" + 
+                        startDateTest.Hour.ToString("D2") +":"+ startDateTest.Minute.ToString("D2") + ":00.000Z",
+
                         TimeZone = "UTC"
                     },
                     End = new DateTimeTimeZone()
                     {
                         DateTime = startDateTest.Year.ToString("D4") + "-" + startDateTest.Month.ToString("D2") + "-" +
                         startDateTest.Day.ToString("D2") + "T" +
-                        startDateTest.AddMinutes(normalizedDuration).Hour.ToString("D2") + ":" + startDateTest.AddMinutes(normalizedDuration).Minute.ToString("D2") + ":00.000Z",
+
+
+                        startDateTest.AddMinutes(normalizedDuration).Hour.ToString("D2") + ":" + startDateTest.AddMinutes(normalizedDuration).Minute.ToString("D2") +":00.000Z",
+
                         TimeZone = "UTC"
                     },
                     Location = new Location()
@@ -268,8 +278,10 @@ namespace SampleAADv2Bot.Dialogs
                     Attendees = inputAttendee
                 };
 
-                //  var scheduledMeeting = await meetingService.ScheduleMeeting(result.AccessToken, meeting);
-                //await context.PostAsync($"Meeting with iCalUId - {scheduledMeeting.ICalUId} is scheduled.");
+
+                var scheduledMeeting = await meetingService.ScheduleMeeting(result.AccessToken, meeting);
+                await context.PostAsync($"Meeting with iCalUId - {scheduledMeeting.ICalUId} is scheduled.");
+
             }
             catch (Exception ex)
             {
