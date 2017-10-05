@@ -13,6 +13,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using SampleAADv2Bot.Extensions;
+using SampleAADv2Bot.Services;
+using SampleAADv2Bot.Util;
+using Microsoft.Graph;
+using System.Text;
 
 namespace SampleAADv2Bot.Dialogs
 {
@@ -27,11 +31,11 @@ namespace SampleAADv2Bot.Dialogs
         private int normalizedDuration = 0;
         private string[] normalizedEmails;
 
-
-
         //Scheduling
         AuthResult result = null;
 
+        // TBD - Replace with dependency injection 
+        MeetingService meetingService = new MeetingService(new RoomService());
 
         public async Task StartAsync(IDialogContext context)
         {
@@ -57,7 +61,7 @@ namespace SampleAADv2Bot.Dialogs
 
         public async Task ResumeAfterAuth(IDialogContext authContext, IAwaitable<AuthResult> authResult)
         {
-            var result = await authResult;
+            this.result = await authResult;
 
             // Use token to call into service
             var json = await new HttpClient().GetWithAuthAsync(result.AccessToken, "https://graph.microsoft.com/v1.0/me");
@@ -120,7 +124,7 @@ namespace SampleAADv2Bot.Dialogs
             {
                 try
                 {
-                    //await GetMeetingSuggestions(context, argument);
+                    await GetMeetingSuggestions(context, argument);
                 }
                 catch (Exception e)
                 {
@@ -132,6 +136,70 @@ namespace SampleAADv2Bot.Dialogs
             {
                 PromptDialog.Text(context, this.DateMessageReceivedAsync, "Please enter when you want to have the meeting. e.g. 2017-10-10");
             }
+        }
+
+        private async Task GetMeetingSuggestions(IDialogContext context, IAwaitable<string> argument)
+        {
+            string startDate = date + "T00:00:00.000Z";
+            string endDate = date + "T10: 00:00.00Z";
+            List<Attendee> inputAttendee = new List<Attendee>();
+            foreach (var i in normalizedEmails)
+            {
+                inputAttendee.Add(
+                     new Attendee()
+                     {
+                         EmailAddress = new EmailAddress()
+                         {
+                             Address = i
+                         }
+                     }
+                    );
+            }
+            Duration inputDuration = new Duration(new TimeSpan(0, normalizedDuration, 0));
+
+            var userFindMeetingTimesRequestBody = new UserFindMeetingTimesRequestBody()
+            {
+                Attendees = inputAttendee,
+                TimeConstraint = new TimeConstraint()
+                {
+                    Timeslots = new List<TimeSlot>()
+                        {
+                            new TimeSlot()
+                            {
+                                Start = new DateTimeTimeZone()
+                                {
+                                    DateTime = startDate,
+                                    TimeZone = "UTC"
+                                },
+                                End = new DateTimeTimeZone()
+                                {
+                                    DateTime = endDate,
+                                    TimeZone = "UTC"
+                                }
+                            }
+                        }
+                },
+                MeetingDuration = inputDuration,
+                MaxCandidates = 15,
+                IsOrganizerOptional = false,
+                ReturnSuggestionReasons = true,
+                MinimumAttendeePercentage = 100
+
+            };
+            var meetingTimeSuggestion = await meetingService.GetMeetingsTimeSuggestions(result.AccessToken, userFindMeetingTimesRequestBody);
+            var stringBuilder = new StringBuilder();
+            int num = 1;
+            foreach (var suggestion in meetingTimeSuggestion.MeetingTimeSuggestions)
+            {
+                DateTime startTime, endTime;
+                DateTime.TryParse(suggestion.MeetingTimeSlot.Start.DateTime, out startTime);
+                DateTime.TryParse(suggestion.MeetingTimeSlot.End.DateTime, out endTime);
+
+                stringBuilder.AppendLine($"{num} {startTime.ToString()}  - {endTime.ToString()}\n");
+                num++;
+            }
+            await context.PostAsync($"There are the options for meeting");
+            await context.PostAsync(stringBuilder.ToString());
         }
     }
 }
