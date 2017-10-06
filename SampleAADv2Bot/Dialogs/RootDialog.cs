@@ -30,7 +30,8 @@ namespace SampleAADv2Bot.Dialogs
 
         //Scheduling
         AuthResult result = null;
-
+        int timeZoneHours = 5;
+        int timeZoneMinutes = 30;
 
 
         private List<DateTime> lstStartDateTme = null;
@@ -203,7 +204,7 @@ namespace SampleAADv2Bot.Dialogs
                 DateTime.TryParse(suggestion.MeetingTimeSlot.Start.DateTime, out startTime);
                 DateTime.TryParse(suggestion.MeetingTimeSlot.End.DateTime, out endTime);
                 lstStartDateTme.Add(startTime);
-                stringBuilder.AppendLine($"{num} {startTime.ToString()}  - {endTime.ToString()}\n");
+                stringBuilder.AppendLine($"{num} {startTime.AddHours(timeZoneHours).AddMinutes(timeZoneMinutes).ToString()}  - {endTime.AddHours(timeZoneHours).AddMinutes(timeZoneMinutes).ToString()}\n");
                 num++;
             }
 
@@ -219,7 +220,7 @@ namespace SampleAADv2Bot.Dialogs
         {
 
             var optiontime = await (message);
-            await context.PostAsync("the time slot you have chosen is " + lstStartDateTme[Convert.ToInt16(optiontime) - 1]);
+            await context.PostAsync("the time slot you have chosen is " + lstStartDateTme[Convert.ToInt16(optiontime) - 1].AddHours(timeZoneHours).AddMinutes(timeZoneMinutes));
             var startDate = lstStartDateTme[Convert.ToInt16(optiontime) - 1];
             try
             {
@@ -260,8 +261,6 @@ namespace SampleAADv2Bot.Dialogs
                     {
                         DateTime = startDate.Year.ToString("D4") + "-" + startDate.Month.ToString("D2") + "-" +
                         startDate.Day.ToString("D2") + "T" +
-
-
                         startDate.AddMinutes(normalizedDuration).Hour.ToString("D2") + ":" + startDate.AddMinutes(normalizedDuration).Minute.ToString("D2") +":00.000Z",
 
                         TimeZone = "UTC"
@@ -279,7 +278,9 @@ namespace SampleAADv2Bot.Dialogs
                 stringBuilder.AppendLine($"Booked the meeting! Subject is {subject}. Participants are");
                 foreach (var email in normalizedEmails)
                     stringBuilder.AppendLine(email + " ");
-                stringBuilder.AppendLine(". Date is " + startDate.ToShortDateString()+" "+ startDate.ToShortTimeString() + " - " + startDate.AddMinutes(normalizedDuration).ToShortTimeString() + ".");
+                stringBuilder.AppendLine(". Date is " + startDate.ToShortDateString()+" "
+                    + startDate.AddHours(timeZoneHours).AddMinutes(timeZoneMinutes).ToShortTimeString() + " - " 
+                    + startDate.AddHours(timeZoneHours).AddMinutes(timeZoneMinutes).AddMinutes(normalizedDuration).ToShortTimeString() + ".");
 
                 await context.PostAsync(stringBuilder.ToString());
 

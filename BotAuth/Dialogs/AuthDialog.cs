@@ -155,22 +155,25 @@ namespace BotAuth.Dialogs
         /// <returns>Task from Posting or prompt to the context.</returns>
         protected virtual Task PromptToLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
         {
-            Attachment plAttachment = null;
-            SigninCard plCard;
-            if (msg.ChannelId == "msteams")
-                plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "openUrl"));
-            else
-                plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
-            plAttachment = plCard.ToAttachment();
+            //Attachment plAttachment = null;
+            //SigninCard plCard;
+            //if (msg.ChannelId == "msteams")
+            //    plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "openUrl"));
+            //else
+            //    plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
+            //plAttachment = plCard.ToAttachment();
 
-            IMessageActivity response = context.MakeMessage();
-            response.Recipient = msg.From;
-            response.Type = "message";
+            //IMessageActivity response = context.MakeMessage();
+            //response.Recipient = msg.From;
+            //response.Type = "message";
 
-            response.Attachments = new List<Attachment>();
-            response.Attachments.Add(plAttachment);
+            //response.Attachments = new List<Attachment>();
+            //response.Attachments.Add(plAttachment);
 
-            return context.PostAsync(response);
+            //return context.PostAsync(response);
+
+            return context.PostAsync($"<a href=\"{authenticationUrl}\">Please Sign in</a>");
+
         }
 
         private List<CardAction> GetCardActions(string authenticationUrl, string actionType)
